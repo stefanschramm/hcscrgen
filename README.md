@@ -1,35 +1,40 @@
-# Home computer screen generator
+# hcscrgen - Home computer screen generator
 
-Takes an image file (like PNG) and converts it to a memory image that can be loaded to the Sharp MZ-700 for displaying.
+Takes an image file (for example in PNG format) and converts it to a memory image that can be loaded to the machine for displaying.
 
 It works by splitting the input image into small tiles and compares them with the computer's character set to find the best matching character.
 
-Support for other home computers may be added in later versions.
-
 ## Usage
 
-    hcscrgen example.png
+    hcscrgen INPUTFILE PROFILE
 
-Will create `example.png.chars.bin` for the character RAM and `example.png.color.bin` for the color RAM.
+**Example:**
 
-## Sharp MZ-700
+    hcscrgen example.png sharpmz
 
-Memory Area   | Address
---------------|---------
-Character RAM | 0xd000
-Color RAM     | 0xd800
+Will create `example.png.chars.bin` for the character RAM and `example.png.color.bin` for the color RAM of the Sharp MZ-700. Additionally, `example.png.preview.png` is created for checking the result with an image viewer.
 
-You can use [RetroLoad](https://retroload.com) to load the memory images by specifying the load address:
+## Available profiles (devices)
 
-### Load character RAM
+Profile name | Device(s)       | Resolution (px) | Character RAM offset | Color RAM offset
+-------------| ----------------|-----------------|----------------------|-----------------
+sharpmz      | Sharp MZ-700    | 320x200         | 0xd000               | 0xd800
+kc87         | Robotron KC 87  | 320x192         | 0xec00               | 0xe800
+
+
+### Sharp MZ-700
+
+You can use [RetroLoad](https://retroload.com) to directly load the memory images by specifying the destination address:
+
+#### Load character RAM
 
     retroload --shortpilot --sharpmznorepeat -f sharpmzgeneric --load d000 example.png.chars.bin
 
-### Load color RAM
+#### Load color RAM
 
     retroload --shortpilot --sharpmznorepeat -f sharpmzgeneric --load d800 example.png.color.bin
 
-### Combined loading
+#### Combined loading
 
 Combine the parts first and than load the complete image:
 

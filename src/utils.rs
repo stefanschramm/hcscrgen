@@ -1,5 +1,7 @@
 use image::{DynamicImage, GenericImageView, ImageReader};
 
+use crate::profiles::{CharsetDefinition, MatrixCharsetOrder};
+
 pub fn image_diff(a: &DynamicImage, b: &DynamicImage) -> u32 {
     assert!(a.width() == b.width() && a.height() == b.height());
     let width = a.width();
@@ -19,26 +21,9 @@ pub fn image_diff(a: &DynamicImage, b: &DynamicImage) -> u32 {
     diff / (width * height)
 }
 
-pub struct CharsetProperties {
-  pub order: MatrixCharsetOrder,
-  pub char_width: u32,
-  pub char_height: u32,
-  pub offset_left: u32,
-  pub spacing_horizontal: u32,
-  pub offset_top: u32,
-  pub spacing_vertical: u32
-}
-
-pub enum MatrixCharsetOrder {
-  /// top to bottom first
-  RowInLowNibble,
-  /// left to right first
-  ColumnInLowNibble, 
-}
-
 pub fn load_matrix_charset(
     source: &str,
-    props: &CharsetProperties,
+    def: &CharsetDefinition,
 ) -> Vec<DynamicImage> {
     let charset = ImageReader::open(source)
         .expect("Unable to read image")
@@ -48,14 +33,14 @@ pub fn load_matrix_charset(
     for code in 0..0xff {
         let hn = code >> 4;
         let ln = code & 0x0f;
-        let (row, column) = match props.order {
+        let (row, column) = match def.mode {
             MatrixCharsetOrder::RowInLowNibble => (ln, hn),
             MatrixCharsetOrder::ColumnInLowNibble => (hn, ln),
         };
-        let x = props.offset_left + column as u32 * (props.char_width + props.spacing_horizontal);
-        let y = props.offset_top + row as u32 * (props.char_height + props.spacing_vertical);
+        let x = def.offset_left + column as u32 * (def.character_width + def.spacing_horizontal);
+        let y = def.offset_top + row as u32 * (def.character_height + def.spacing_vertical);
     
-        characters.push(charset.crop_imm(x, y, props.char_width, props.char_height));
+        characters.push(charset.crop_imm(x, y, def.character_width, def.character_height));
     }
     characters
 }

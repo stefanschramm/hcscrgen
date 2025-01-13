@@ -1,18 +1,9 @@
-use image::DynamicImage;
-use profiles::{kc87::Kc87Converter, sharpmz::SharpMzConverter};
+use image::{DynamicImage, GenericImage};
+use profiles::{MachineProfile, KC87_PROFILE, SHARPMZ_PROFILE};
+use utils::{image_diff, load_matrix_charset};
 
 mod profiles;
 mod utils;
-
-pub enum Profile {
-    SharpMz,
-    Kc87,
-}
-
-trait Converter {
-    fn new() -> Self;
-    fn convert(&self, input_img: &DynamicImage) -> Result<ConversionResult, String>;
-}
 
 pub struct ConversionResult {
     pub preview: DynamicImage,
@@ -20,9 +11,105 @@ pub struct ConversionResult {
     pub color_ram: Option<Vec<u8>>,
 }
 
-pub fn convert(input_img: &DynamicImage, profile: Profile) -> Result<ConversionResult, String> {
-    match profile {
-        Profile::SharpMz => SharpMzConverter::new().convert(input_img),
-        Profile::Kc87 => Kc87Converter::new().convert(input_img)
+pub fn convert(input_img: &DynamicImage, profile: &str) -> Result<ConversionResult, String> {
+    let profile =  match profile {
+        "sharpmz" => SHARPMZ_PROFILE,
+        "kc87" => KC87_PROFILE,
+        _ => return Err(format!("Unknown profile \"{}\".\nAvailable profiles:\n- sharpmz\n- kc87", profile))
+    };
+
+    Converter::new(profile).convert(input_img)
+}
+
+struct Converter {
+    profile: MachineProfile,
+    charsets: Vec<Vec<DynamicImage>>,
+    screen_height: u32,
+    screen_width: u32,
+}
+
+struct Character {
+    charset: u32,
+    code: u8,
+}
+
+impl Converter {
+    fn new(profile: MachineProfile) -> Self {
+        let mut charsets = Vec::new();
+
+        for charset_file in profile.charsets {
+            let charset = load_matrix_charset(&charset_file, &profile.charset_definition);
+            charsets.push(charset);
+        }
+
+        Self {
+            charsets,
+            screen_height: profile.lines * profile.charset_definition.character_height,
+            screen_width: profile.columns * profile.charset_definition.character_width,
+            profile: profile,
+        }
+    }
+
+    fn convert(&self, input_img: &DynamicImage) -> Result<crate::ConversionResult, String> {
+        if input_img.width() < self.screen_width || input_img.height() < self.screen_height {
+            return Err(format!(
+                "Input file must have a dimension of at least {}x{} pixels.",
+                self.screen_width, self.screen_height
+            ));
+        }
+
+        let mut characters: Vec<Character> = Vec::new();
+
+        for row in 0..self.profile.lines {
+            for column in 0..self.profile.columns {
+                let tile = input_img.crop_imm(
+                    column * self.profile.charset_definition.character_width,
+                    row * self.profile.charset_definition.character_height,
+                    self.profile.charset_definition.character_width,
+                    self.profile.charset_definition.character_height,
+                );
+                characters.push(self.get_best_matching_character(&tile));
+            }
+        }
+
+        Ok(ConversionResult {
+            preview: self.create_preview(&characters),
+            character_ram: characters.iter().map(self.profile.character_ram_mapping).collect(),
+            color_ram: Some(characters.iter().map(self.profile.color_ram_mapping).collect()),
+        })
+    }
+
+    fn get_best_matching_character(&self, tile: &DynamicImage) -> Character {
+        let mut best_character = Character {charset: 0, code: 0};
+        let mut best_diff = u32::MAX;
+        for (charset, characters) in self.charsets.iter().enumerate() {
+            for (code, character) in characters.iter().enumerate() {
+                let diff = image_diff(&tile, character);
+                if diff < best_diff {
+                    best_character = Character {charset: charset as u32, code: code as u8};
+                    best_diff = diff;
+                }
+            }
+        }
+
+        best_character
+    }
+
+    fn create_preview(&self, characters: &Vec<Character>) -> DynamicImage {
+        let mut preview_img = DynamicImage::new_rgb8(self.screen_width, self.screen_height);
+        for (i, character) in characters.iter().enumerate() {
+            let row = i as u32 / self.profile.columns;
+            let column = i as u32 - row * self.profile.columns;
+
+            preview_img
+            .copy_from(
+                &self.charsets[character.charset as usize][character.code as usize],
+                column * self.profile.charset_definition.character_width,
+                row * self.profile.charset_definition.character_height,
+            )
+            .expect("Unable to put tile into preview image");
+        }
+
+        preview_img
     }
 }

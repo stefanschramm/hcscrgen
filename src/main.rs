@@ -6,20 +6,19 @@ use image::{EncodableLayout, ImageReader};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 2 {
-        eprintln!("Usage: {} INPUTFILE", args[0]);
+    if args.len() != 3 {
+        eprintln!("Usage: {} INPUTFILE PROFILE", args[0]);
         process::exit(1);
     }
     let input_file = &args[1];
+    let profile = &args[2];
 
     let input_img = ImageReader::open(input_file)
         .expect("Unable to read image")
         .decode()
         .expect("Unable to decode image");
 
-    // TODO: Does it work with KC 87?
-    // match convert(&input_img, hcscrgen::Profile::Kc87) {
-    match convert(&input_img, hcscrgen::Profile::SharpMz) {
+    match convert(&input_img, profile) {
         Err(error_message) => {
             eprintln!("Error while converting: {}", error_message);
             return;
