@@ -1,5 +1,5 @@
 use image::{DynamicImage, GenericImage};
-use profiles::{MachineProfile, KC87_PROFILE, SHARPMZ_PROFILE};
+use profiles::{MachineProfile, C64_PROFILE, KC87_PROFILE, SHARPMZ_PROFILE, Z1013_PROFILE};
 use utils::{image_diff, load_matrix_charset};
 
 mod profiles;
@@ -13,8 +13,10 @@ pub struct ConversionResult {
 
 pub fn convert(input_img: &DynamicImage, profile: &str) -> Result<ConversionResult, String> {
     let profile =  match profile {
-        "sharpmz" => SHARPMZ_PROFILE,
+        "c64" => C64_PROFILE,
         "kc87" => KC87_PROFILE,
+        "sharpmz" => SHARPMZ_PROFILE,
+        "z1013" => Z1013_PROFILE,
         _ => return Err(format!("Unknown profile \"{}\".\nAvailable profiles:\n- sharpmz\n- kc87", profile))
     };
 
@@ -74,8 +76,8 @@ impl Converter {
 
         Ok(ConversionResult {
             preview: self.create_preview(&characters),
-            character_ram: characters.iter().map(self.profile.character_ram_mapping).collect(),
-            color_ram: Some(characters.iter().map(self.profile.color_ram_mapping).collect()),
+            character_ram: self.map_character_ram(&characters),
+            color_ram: self.map_color_ram(&characters),
         })
     }
 
@@ -111,5 +113,16 @@ impl Converter {
         }
 
         preview_img
+    }
+
+    fn map_character_ram(&self, characters: &Vec<Character>) -> Vec<u8> {
+        characters.into_iter().map(self.profile.character_ram_mapping).collect()
+    }
+
+    fn map_color_ram(&self, characters: &Vec<Character>) -> Option<Vec<u8>> {
+        match self.profile.color_ram_mapping {
+            Some(mapping) => Some(characters.iter().map(mapping).collect()),
+            None => None,
+        }
     }
 }
