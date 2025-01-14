@@ -40,7 +40,7 @@ impl Converter {
         let mut charsets = Vec::new();
 
         for charset_file in profile.charsets {
-            let charset = load_matrix_charset(&charset_file, &profile.charset_definition);
+            let charset = load_matrix_charset(charset_file, &profile.charset_definition);
             charsets.push(charset);
         }
 

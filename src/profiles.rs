@@ -6,8 +6,8 @@ pub struct MachineProfile {
     pub character_ram_mapping: fn(character: &Character) -> u8,
     pub color_ram_mapping: Option<fn(character: &Character) -> u8>,
     pub charset_definition: CharsetDefinition,
-    // TODO: static reference to static vector of include_bytes instead for charset definitions?
-    pub charsets: &'static [&'static str],
+    // static PNG data that contains the charset
+    pub charsets: &'static [&'static [u8]],
 }
 
 pub struct CharsetDefinition {
@@ -47,7 +47,7 @@ pub const KC87_PROFILE: MachineProfile = MachineProfile {
         offset_left: 1,
         spacing_horizontal: 1,
     },
-    charsets: &["profiles/kc87/charset_inverted.png"],
+    charsets: &[include_bytes!("kc87/charset_inverted.png")],
 };
 
 /// Sharp MZ profile
@@ -72,8 +72,8 @@ pub const SHARPMZ_PROFILE: MachineProfile = MachineProfile {
         spacing_horizontal: 3,
     },
     charsets: &[
-        "profiles/sharp_mz-700/charset.png",
-        "profiles/sharp_mz-700/charset_extended.png",
+        include_bytes!("sharpmz/charset.png"),
+        include_bytes!("sharpmz/charset_extended.png"),
     ],
 };
 
@@ -98,7 +98,7 @@ pub const C64_PROFILE: MachineProfile = MachineProfile {
         offset_left: 0,
         spacing_horizontal: 0,
     },
-    charsets: &["profiles/c64/C64_Petscii_Charts.png"],
+    charsets: &[include_bytes!("c64/C64_Petscii_Charts.png")],
 };
 
 /// Z 1013 Profile
@@ -120,5 +120,5 @@ pub const Z1013_PROFILE: MachineProfile = MachineProfile {
         offset_left: 1,
         spacing_horizontal: 1,
     },
-    charsets: &["profiles/z1013/zg_1013_orig_inverted.png"],
+    charsets: &[include_bytes!("z1013/zg_1013_orig_inverted.png")],
 };

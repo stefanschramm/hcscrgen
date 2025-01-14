@@ -1,3 +1,5 @@
+use std::io::Cursor;
+
 use image::{DynamicImage, GenericImageView, ImageReader};
 
 use crate::profiles::{CharsetDefinition, MatrixCharsetOrder};
@@ -22,13 +24,14 @@ pub fn image_diff(a: &DynamicImage, b: &DynamicImage) -> u32 {
 }
 
 pub fn load_matrix_charset(
-    source: &str,
+    charset_data: &[u8],
     def: &CharsetDefinition,
 ) -> Vec<DynamicImage> {
-    let charset = ImageReader::open(source)
-        .expect("Unable to read image")
+    let cursor = Cursor::new(charset_data);
+    let reader = ImageReader::with_format(cursor, image::ImageFormat::Png);
+    let charset = reader
         .decode()
-        .expect("Unable to decode image");
+        .expect("Unable to decode charset image");
     let mut characters = Vec::with_capacity(0xff);
     for code in 0..0xff {
         let hn = code >> 4;
