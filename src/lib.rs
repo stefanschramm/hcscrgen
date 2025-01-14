@@ -1,5 +1,5 @@
 use image::{DynamicImage, GenericImage};
-use profiles::{MachineProfile, C64_PROFILE, KC87_PROFILE, SHARPMZ_PROFILE, Z1013_PROFILE};
+use profiles::{MachineProfile, AVAILABLE_PROFILES};
 use utils::{image_diff, load_matrix_charset};
 
 mod profiles;
@@ -11,20 +11,30 @@ pub struct ConversionResult {
     pub color_ram: Option<Vec<u8>>,
 }
 
-pub fn convert(input_img: &DynamicImage, profile: &str) -> Result<ConversionResult, String> {
-    let profile =  match profile {
-        "c64" => C64_PROFILE,
-        "kc87" => KC87_PROFILE,
-        "sharpmz" => SHARPMZ_PROFILE,
-        "z1013" => Z1013_PROFILE,
-        _ => return Err(format!("Unknown profile \"{}\".\nAvailable profiles:\n- sharpmz\n- kc87", profile))
-    };
+pub fn convert(
+    input_img: &DynamicImage,
+    profile_identifier: &str,
+) -> Result<ConversionResult, String> {
+    for profile in AVAILABLE_PROFILES {
+        if profile.identifier == profile_identifier {
+            return Converter::new(profile).convert(input_img);
+        }
+    }
 
-    Converter::new(profile).convert(input_img)
+    let identifiers = AVAILABLE_PROFILES
+        .iter()
+        .map(|p| p.identifier)
+        .collect::<Vec<&str>>()
+        .join(", ");
+
+    return Err(format!(
+        "Unknown profile identifier \"{}\".\nAvailable profiles: {}",
+        profile_identifier, identifiers
+    ));
 }
 
-struct Converter {
-    profile: MachineProfile,
+struct Converter<'a> {
+    profile: &'a MachineProfile,
     charsets: Vec<Vec<DynamicImage>>,
     screen_height: u32,
     screen_width: u32,
@@ -35,8 +45,8 @@ struct Character {
     code: u8,
 }
 
-impl Converter {
-    fn new(profile: MachineProfile) -> Self {
+impl<'a> Converter<'a> {
+    fn new(profile: &'a MachineProfile) -> Self {
         let mut charsets = Vec::new();
 
         for charset_file in profile.charsets {
@@ -82,13 +92,19 @@ impl Converter {
     }
 
     fn get_best_matching_character(&self, tile: &DynamicImage) -> Character {
-        let mut best_character = Character {charset: 0, code: 0};
+        let mut best_character = Character {
+            charset: 0,
+            code: 0,
+        };
         let mut best_diff = u32::MAX;
         for (charset, characters) in self.charsets.iter().enumerate() {
             for (code, character) in characters.iter().enumerate() {
                 let diff = image_diff(&tile, character);
                 if diff < best_diff {
-                    best_character = Character {charset: charset as u32, code: code as u8};
+                    best_character = Character {
+                        charset: charset as u32,
+                        code: code as u8,
+                    };
                     best_diff = diff;
                 }
             }
@@ -104,19 +120,22 @@ impl Converter {
             let column = i as u32 - row * self.profile.columns;
 
             preview_img
-            .copy_from(
-                &self.charsets[character.charset as usize][character.code as usize],
-                column * self.profile.charset_definition.character_width,
-                row * self.profile.charset_definition.character_height,
-            )
-            .expect("Unable to put tile into preview image");
+                .copy_from(
+                    &self.charsets[character.charset as usize][character.code as usize],
+                    column * self.profile.charset_definition.character_width,
+                    row * self.profile.charset_definition.character_height,
+                )
+                .expect("Unable to put tile into preview image");
         }
 
         preview_img
     }
 
     fn map_character_ram(&self, characters: &Vec<Character>) -> Vec<u8> {
-        characters.into_iter().map(self.profile.character_ram_mapping).collect()
+        characters
+            .into_iter()
+            .map(self.profile.character_ram_mapping)
+            .collect()
     }
 
     fn map_color_ram(&self, characters: &Vec<Character>) -> Option<Vec<u8>> {
