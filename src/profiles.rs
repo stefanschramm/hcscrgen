@@ -49,7 +49,7 @@ pub const C64_PROFILE: MachineProfile = MachineProfile {
     character_ram_mapping: |character| character.code,
     color_ram_mapping: Some(|_character| 0x01),
     charset_definition: CharsetDefinition {
-        mode: MatrixCharsetOrder::RowInLowNibble,
+        mode: MatrixCharsetOrder::ColumnInLowNibble,
         character_width: 8,
         character_height: 8,
         offset_top: 0,
@@ -57,7 +57,7 @@ pub const C64_PROFILE: MachineProfile = MachineProfile {
         offset_left: 0,
         spacing_horizontal: 0,
     },
-    charsets: &[include_bytes!("c64/C64_Petscii_Charts.png")],
+    charsets: &[include_bytes!("c64/characters.901225-01.png")],
 };
 
 /// KC 87 profile
