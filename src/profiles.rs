@@ -1,4 +1,9 @@
-use crate::Character;
+use crate::utils::{CharsetDefinition, MatrixCharsetOrder};
+
+pub struct Character {
+    pub charset: u32,
+    pub code: u8,
+}
 
 pub struct MachineProfile {
     pub identifier: &'static str,
@@ -9,23 +14,6 @@ pub struct MachineProfile {
     pub charset_definition: CharsetDefinition,
     // static PNG data that contains the charset
     pub charsets: &'static [&'static [u8]],
-}
-
-pub struct CharsetDefinition {
-    pub mode: MatrixCharsetOrder,
-    pub character_width: u32,
-    pub character_height: u32,
-    pub offset_top: u32,
-    pub spacing_vertical: u32,
-    pub offset_left: u32,
-    pub spacing_horizontal: u32,
-}
-
-pub enum MatrixCharsetOrder {
-    /// top to bottom first
-    RowInLowNibble,
-    /// left to right first
-    ColumnInLowNibble,
 }
 
 pub const AVAILABLE_PROFILES: &[&MachineProfile] = &[

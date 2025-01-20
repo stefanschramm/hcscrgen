@@ -1,7 +1,9 @@
-use crate::kmeans::{kmeans, Cluster, KmeansContext};
-use crate::utils::image_diff;
+use crate::{profiles::MachineProfile, utils::image_diff};
 use image::{DynamicImage, GenericImage, Pixel, Rgb, RgbImage};
+use kmeans::{Cluster, KmeansContext};
 use rand::random;
+
+mod kmeans;
 
 /// Generate an optimized charset for representing the passed image
 pub fn generate_charset(profile: &ScreenProfile, img: &DynamicImage) -> Vec<RgbImage> {
@@ -14,7 +16,7 @@ pub fn generate_charset(profile: &ScreenProfile, img: &DynamicImage) -> Vec<RgbI
         _lines: profile.lines,
     };
 
-    let clusters = kmeans(&context, profile.chars, &tiles, 50, 5);
+    let clusters = kmeans::optimize(&context, profile.chars, &tiles, 50, 5);
 
     // context.draw_approximation("final.png", &clusters);
 
@@ -30,13 +32,13 @@ pub fn convert_charset(characters: &Vec<RgbImage>) -> Vec<u8> {
     let mut data: Vec<u8> = Vec::with_capacity(255 * 8);
     for character in characters {
         assert!(character.width() == 8 && character.height() == 8);
-        for x in 0..8 {
+        for y in 0..8 {
             let mut byte: u8 = 0;
-            for y in 0..8 {
+            for x in 0..8 {
                 let pixel = character.get_pixel(x, y);
                 let avg = (pixel[0] as u32 + pixel[1] as u32 + pixel[2] as u32) / 3;
                 if avg > 0x80 {
-                    byte |= 1 << (7 - y);
+                    byte |= 1 << (7 - x);
                 }
             }
             data.push(byte);
@@ -157,6 +159,18 @@ pub struct ScreenProfile {
     pub character_width: u32,
     pub character_height: u32,
     pub chars: usize,
+}
+
+impl ScreenProfile {
+    pub fn from_machine_profile(profile: &MachineProfile) -> Self {
+        ScreenProfile {
+            lines: profile.lines,
+            columns: profile.columns,
+            character_width: profile.charset_definition.character_width,
+            character_height: profile.charset_definition.character_height,
+            chars: 0x100,
+        }
+    }
 }
 
 fn initialize_tiles(profile: &ScreenProfile, input_img: &DynamicImage) -> Vec<RgbImage> {

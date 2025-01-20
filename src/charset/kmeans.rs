@@ -33,7 +33,7 @@ struct Diff {
     diff: u32,
 }
 
-pub fn kmeans<T>(
+pub fn optimize<T>(
     context: &impl KmeansContext<T>,
     k: usize,
     elements: &Vec<T>,
@@ -132,12 +132,11 @@ fn fill_empty_clusters<T>(
 ) -> bool {
     let mut max_diffs = get_highest_deviations_by_cluster(&clusters);
     if !max_diffs.is_empty() {
-        println!("Max diff: {}", max_diffs[0].diff);
         if max_diffs[0].diff == 0 {
             return true;
         }
     } else {
-        println!("No more diffs?!");
+        panic!("No more diffs?!");
     }
 
     for c in clusters {

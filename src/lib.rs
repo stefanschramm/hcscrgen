@@ -1,23 +1,35 @@
-use image::{DynamicImage, GenericImage};
-use profiles::{MachineProfile, AVAILABLE_PROFILES};
+use charset::{convert_charset, generate_charset, ScreenProfile};
+use image::{DynamicImage, GenericImage, RgbImage};
+use profiles::{Character, MachineProfile, AVAILABLE_PROFILES};
 use utils::{image_diff, load_matrix_charset};
 
+mod charset;
 mod profiles;
 mod utils;
 
 pub struct ConversionResult {
-    pub preview: DynamicImage,
+    pub preview: RgbImage,
     pub character_ram: Vec<u8>,
     pub color_ram: Option<Vec<u8>>,
+    pub charset: Option<Vec<u8>>,
 }
 
 pub fn convert(
     input_img: &DynamicImage,
     profile_identifier: &str,
+    autogenerate_charset: bool,
 ) -> Result<ConversionResult, String> {
     for profile in AVAILABLE_PROFILES {
         if profile.identifier == profile_identifier {
-            return Converter::new(profile).convert(input_img);
+            let charset = if autogenerate_charset {
+                let charset =
+                    generate_charset(&ScreenProfile::from_machine_profile(profile), input_img);
+                Some(charset)
+            } else {
+                None
+            };
+
+            return Converter::new(profile, charset).convert(input_img);
         }
     }
 
@@ -35,27 +47,33 @@ pub fn convert(
 
 struct Converter<'a> {
     profile: &'a MachineProfile,
-    charsets: Vec<Vec<DynamicImage>>,
+    charsets: Vec<Vec<RgbImage>>,
+    uses_custom_charset: bool,
     screen_height: u32,
     screen_width: u32,
 }
 
-struct Character {
-    charset: u32,
-    code: u8,
-}
-
 impl<'a> Converter<'a> {
-    fn new(profile: &'a MachineProfile) -> Self {
-        let mut charsets = Vec::new();
+    fn new(profile: &'a MachineProfile, custom_charset: Option<Vec<RgbImage>>) -> Self {
+        let uses_custom_charset = custom_charset.is_some();
+        let charsets = {
+            if let Some(custom_charset) = custom_charset {
+                vec![custom_charset]
+            } else {
+                let mut charsets = Vec::new();
 
-        for charset_file in profile.charsets {
-            let charset = load_matrix_charset(charset_file, &profile.charset_definition);
-            charsets.push(charset);
-        }
+                for charset_file in profile.charsets {
+                    let charset = load_matrix_charset(charset_file, &profile.charset_definition);
+                    charsets.push(charset);
+                }
+
+                charsets
+            }
+        };
 
         Self {
             charsets,
+            uses_custom_charset,
             screen_height: profile.lines * profile.charset_definition.character_height,
             screen_width: profile.columns * profile.charset_definition.character_width,
             profile: profile,
@@ -74,12 +92,14 @@ impl<'a> Converter<'a> {
 
         for row in 0..self.profile.lines {
             for column in 0..self.profile.columns {
-                let tile = input_img.crop_imm(
-                    column * self.profile.charset_definition.character_width,
-                    row * self.profile.charset_definition.character_height,
-                    self.profile.charset_definition.character_width,
-                    self.profile.charset_definition.character_height,
-                );
+                let tile = input_img
+                    .crop_imm(
+                        column * self.profile.charset_definition.character_width,
+                        row * self.profile.charset_definition.character_height,
+                        self.profile.charset_definition.character_width,
+                        self.profile.charset_definition.character_height,
+                    )
+                    .into_rgb8();
                 characters.push(self.get_best_matching_character(&tile));
             }
         }
@@ -88,10 +108,15 @@ impl<'a> Converter<'a> {
             preview: self.create_preview(&characters),
             character_ram: self.map_character_ram(&characters),
             color_ram: self.map_color_ram(&characters),
+            charset: if self.uses_custom_charset {
+                Some(convert_charset(&self.charsets[0]))
+            } else {
+                None
+            },
         })
     }
 
-    fn get_best_matching_character(&self, tile: &DynamicImage) -> Character {
+    fn get_best_matching_character(&self, tile: &RgbImage) -> Character {
         let mut best_character = Character {
             charset: 0,
             code: 0,
@@ -113,8 +138,8 @@ impl<'a> Converter<'a> {
         best_character
     }
 
-    fn create_preview(&self, characters: &Vec<Character>) -> DynamicImage {
-        let mut preview_img = DynamicImage::new_rgb8(self.screen_width, self.screen_height);
+    fn create_preview(&self, characters: &Vec<Character>) -> RgbImage {
+        let mut preview_img = RgbImage::new(self.screen_width, self.screen_height);
         for (i, character) in characters.iter().enumerate() {
             let row = i as u32 / self.profile.columns;
             let column = i as u32 - row * self.profile.columns;

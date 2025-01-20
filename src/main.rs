@@ -18,7 +18,8 @@ fn main() {
         .decode()
         .expect("Unable to decode image");
 
-    match convert(&input_img, profile) {
+    // TODO: add cmdline argument to for autogenerate charset
+    match convert(&input_img, profile, false) {
         Err(error_message) => {
             eprintln!("Error while converting: {}", error_message);
             return;
@@ -39,6 +40,13 @@ fn main() {
                     .expect("Unable to open color ram output file.")
                     .write_all(&color_ram.as_bytes())
                     .expect("Unable to write to color ram output file.");
+            }
+
+            if let Some(charset) = result.charset {
+                File::create(format!("{}.charset.bin", input_file))
+                    .expect("Unable to open charset output file.")
+                    .write_all(&charset.as_bytes())
+                    .expect("Unable to write to charset output file.");
             }
         }
     }
