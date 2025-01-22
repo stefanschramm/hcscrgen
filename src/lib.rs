@@ -1,7 +1,7 @@
 use charset::{convert_charset, generate_charset, ScreenProfile};
 use image::{DynamicImage, GenericImage, RgbImage};
 use profiles::{Character, MachineProfile, AVAILABLE_PROFILES};
-use utils::{image_diff, load_matrix_charset};
+use utils::{image_diff, load_charset};
 
 mod charset;
 mod profiles;
@@ -63,7 +63,7 @@ impl<'a> Converter<'a> {
                 let mut charsets = Vec::new();
 
                 for charset_file in profile.charsets {
-                    let charset = load_matrix_charset(charset_file, &profile.charset_definition);
+                    let charset = load_charset(charset_file, &profile.charset_definition);
                     charsets.push(charset);
                 }
 

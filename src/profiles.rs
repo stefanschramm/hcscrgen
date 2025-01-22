@@ -1,4 +1,4 @@
-use crate::utils::{CharsetDefinition, MatrixCharsetOrder};
+use crate::utils::CharsetDefinition;
 
 pub struct Character {
     pub charset: u32,
@@ -37,15 +37,10 @@ pub const C64_PROFILE: MachineProfile = MachineProfile {
     character_ram_mapping: |character| character.code,
     color_ram_mapping: Some(|_character| 0x01),
     charset_definition: CharsetDefinition {
-        mode: MatrixCharsetOrder::ColumnInLowNibble,
         character_width: 8,
         character_height: 8,
-        offset_top: 0,
-        spacing_vertical: 0,
-        offset_left: 0,
-        spacing_horizontal: 0,
     },
-    charsets: &[include_bytes!("c64/characters.901225-01.png")],
+    charsets: &[include_bytes!("c64/charset_0.png")],
 };
 
 /// KC 87 profile
@@ -61,15 +56,10 @@ pub const KC87_PROFILE: MachineProfile = MachineProfile {
     character_ram_mapping: |character| character.code,
     color_ram_mapping: Some(|_character| 0b01110000),
     charset_definition: CharsetDefinition {
-        mode: MatrixCharsetOrder::ColumnInLowNibble,
         character_width: 8,
         character_height: 8,
-        offset_top: 1,
-        spacing_vertical: 1,
-        offset_left: 1,
-        spacing_horizontal: 1,
     },
-    charsets: &[include_bytes!("kc87/charset_inverted.png")],
+    charsets: &[include_bytes!("kc87/charset.png")],
 };
 
 /// Sharp MZ profile
@@ -86,17 +76,12 @@ pub const SHARPMZ_PROFILE: MachineProfile = MachineProfile {
     character_ram_mapping: |character| character.code,
     color_ram_mapping: Some(|character| if character.charset == 0 { 0x07 } else { 0x87 }),
     charset_definition: CharsetDefinition {
-        mode: MatrixCharsetOrder::RowInLowNibble,
         character_width: 8,
         character_height: 8,
-        offset_top: 2,
-        spacing_vertical: 3,
-        offset_left: 2,
-        spacing_horizontal: 3,
     },
     charsets: &[
-        include_bytes!("sharpmz/charset.png"),
-        include_bytes!("sharpmz/charset_extended.png"),
+        include_bytes!("sharpmz/charset_0.png"),
+        include_bytes!("sharpmz/charset_1.png"),
     ],
 };
 
@@ -112,13 +97,8 @@ pub const Z1013_PROFILE: MachineProfile = MachineProfile {
     character_ram_mapping: |character| character.code,
     color_ram_mapping: None,
     charset_definition: CharsetDefinition {
-        mode: MatrixCharsetOrder::ColumnInLowNibble,
         character_width: 8,
         character_height: 8,
-        offset_top: 1,
-        spacing_vertical: 1,
-        offset_left: 1,
-        spacing_horizontal: 1,
     },
-    charsets: &[include_bytes!("z1013/zg_1013_orig_inverted.png")],
+    charsets: &[include_bytes!("z1013/charset.png")],
 };
