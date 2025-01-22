@@ -1,8 +1,8 @@
 # hcscrgen - Home computer screen contents generator
 
-Takes an image file (for example in PNG format) and converts it to a memory image that can be loaded to the machine for displaying.
+Takes an image file (for example in PNG format) and converts it to a raw memory image that can be loaded to the machine for displaying.
 
-It works by splitting the input image into small tiles and compares them with the computer's character set to find the best matching character.
+It works by splitting the input image into small tiles and compares them with the machine's character set to find the best matching character for each tile.
 
 ## Usage
 
@@ -25,7 +25,7 @@ z1013        | Robotron Z 1013 | 256x256         | 0xec00               | -
 
 Note: For some machines it's possible to move the memory regions to different locations by configuring the display controller.
 
-### Sharp MZ-700
+### Sharp MZ-700 (sharpmz)
 
 You can use [RetroLoad](https://retroload.com) to directly load the memory images by specifying the destination address:
 
@@ -44,10 +44,11 @@ Combine the parts first and than load the complete image:
     dd if=example.png.color.bin of=example.png.chars.bin conv=notrunc bs=1 seek=2048
     retroload --shortpilot --sharpmznorepeat -f sharpmzgeneric --load d000 example.png.chars.bin
 
-### Robotron Z 1013
+### Robotron Z 1013 (z1013)
 
     retroload -f z1013generic example.png.chars.bin
 
 at the machine:
 
     L EC00 F000
+
