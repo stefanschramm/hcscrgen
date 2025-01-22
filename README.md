@@ -1,4 +1,4 @@
-# hcscrgen - Home computer screen generator
+# hcscrgen - Home computer screen contents generator
 
 Takes an image file (for example in PNG format) and converts it to a memory image that can be loaded to the machine for displaying.
 
