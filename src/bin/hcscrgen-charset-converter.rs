@@ -11,10 +11,10 @@ struct Args {
     #[arg(long, default_value_t = 8)]
     height: u32,
     /// Offset top
-    #[arg(long, default_value_t = 0)]
+    #[arg(long, default_value_t = 1)]
     top: u32,
     /// Offset left
-    #[arg(long, default_value_t = 0)]
+    #[arg(long, default_value_t = 1)]
     left: u32,
     /// Vertical spacing
     #[arg(long, default_value_t = 1)]
