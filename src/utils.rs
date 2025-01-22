@@ -42,8 +42,8 @@ pub fn load_matrix_charset(charset_data: &[u8], def: &CharsetDefinition) -> Vec<
     let cursor = Cursor::new(charset_data);
     let reader = ImageReader::with_format(cursor, image::ImageFormat::Png);
     let charset = reader.decode().expect("Unable to decode charset image");
-    let mut characters = Vec::with_capacity(0xff);
-    for code in 0..0xff {
+    let mut characters = Vec::with_capacity(0x100);
+    for code in 0..0x100 {
         let hn = code >> 4;
         let ln = code & 0x0f;
         let (row, column) = match def.mode {
