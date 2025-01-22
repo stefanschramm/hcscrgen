@@ -21,6 +21,7 @@ Profile name | Device(s)       | Resolution (px) | Character RAM offset | Color 
 c64          | Commodore C 64  | 320x200         | 0x0400               | 0xd800
 kc87         | Robotron KC 87  | 320x192         | 0xec00               | 0xe800
 sharpmz      | Sharp MZ-700    | 320x200         | 0xd000               | 0xd800
+z1013        | Robotron Z 1013 | 256x256         | 0xec00               | -
 
 Note: For some machines it's possible to move the memory regions to different locations by configuring the display controller.
 
@@ -42,3 +43,11 @@ Combine the parts first and than load the complete image:
 
     dd if=example.png.color.bin of=example.png.chars.bin conv=notrunc bs=1 seek=2048
     retroload --shortpilot --sharpmznorepeat -f sharpmzgeneric --load d000 example.png.chars.bin
+
+### Robotron Z 1013
+
+    retroload -f z1013generic example.png.chars.bin
+
+at the machine:
+
+    L EC00 F000
