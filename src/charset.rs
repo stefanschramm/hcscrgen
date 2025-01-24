@@ -1,7 +1,6 @@
 use crate::{profiles::MachineProfile, utils::image_diff};
 use image::{DynamicImage, GenericImage, Pixel, Rgb, RgbImage};
 use kmeans::{Cluster, KmeansContext};
-use rand::random;
 
 mod kmeans;
 
@@ -126,12 +125,14 @@ impl CharsetGeneratorContext {
 }
 
 impl KmeansContext<RgbImage> for CharsetGeneratorContext {
-    fn initialize_centroid(&self, _k: usize) -> RgbImage {
+    fn initialize_centroid(&self, k: usize) -> RgbImage {
+        let mut rnd: i16 = 2144 + k as i16; // some reproducible pseudo-random pattern
         let mut img = RgbImage::new(self.character_width, self.character_height);
         for x in 0..self.character_width {
             for y in 0..self.character_height {
                 // TODO: support color/grayscale?
-                let val = if random::<bool>() { 0xff } else { 0x00 };
+                rnd = (rnd >> 1) ^ (-(rnd & 1) & 0b0001010110001011);
+                let val = if rnd & 1 == 1 { 0xff } else { 0x00 };
                 img.put_pixel(x, y, Rgb([val, val, val]));
             }
         }
